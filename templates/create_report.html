@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Create Report - Lottery Stock Tracker{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        align-items: center;
+    }
+    
+    .form-group {
+        flex: 1;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .books-section {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .books-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #2c3e50;
+    }
+    
+    .submit-btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+    }
+    
+    .submit-btn:hover {
+        background-color: #45a049;
+    }
+    
+    .report-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 30px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    
+    .report-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #333;
+    }
+    
+    .report-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .report-date {
+        font-size: 16px;
+        color: #666;
+    }
+    
+    .report-section {
+        margin-bottom: 25px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #34495e;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #bdc3c7;
+    }
+    
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    
+    .report-table th,
+    .report-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .report-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+    
+    .amount {
+        text-align: right;
+        font-family: monospace;
+    }
+    
+    .calculation-step {
+        background-color: #f8f9fa;
+        padding: 10px;
+        margin: 5px 0;
+        border-left: 4px solid #007bff;
+        font-family: monospace;
+    }
+    
+    .final-result {
+        background-color: #d4edda;
+        border: 2px solid #28a745;
+        border-radius: 6px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 30px;
+    }
+    
+    .final-amount {
+        font-size: 24px;
+        font-weight: bold;
+        color: #155724;
+        margin-top: 10px;
+    }
+    
+    .print-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 20px;
+        margin-right: 10px;
+    }
+    
+    .print-btn:hover {
+        background-color: #0056b3;
+    }
+    
+    @media print {
+        .form-container,
+        .print-btn,
+        .nav-container,
+        .flash-message {
+            display: none !important;
+        }
+        
+        .report-container {
+            box-shadow: none;
+            border: none;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .report-header {
+            margin-bottom: 20px;
+        }
+        
+        .final-result {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not show_report %}
+<div class="form-container">
+    <h2>📈 Create Daily Report</h2>
+    
+    {% if error %}
+    <div class="flash-message flash-error" style="margin-bottom: 20px;">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="date">Report Date:</label>
+                <input type="date" id="date" name="date" value="{{ current_date }}" required>
+            </div>
+        </div>
+        
+        <div class="books-section">
+            <div class="books-title">New Books Opened ($)</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="books_1">$1 Books:</label>
+                    <input type="number" id="books_1" name="books_1" step="0.01" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="books_2">$2 Books:</label>
+                    <input type="number" id="books_2" name="books_2" step="0.01" min="0" placeholder="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="books_5">$5 Books:</label>
+                    <input type="number" id="books_5" name="books_5" step="0.01" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="books_10">$10 Books:</label>
+                    <input type="number" id="books_10" name="books_10" step="0.01" min="0" placeholder="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="books_20">$20 Books:</label>
+                    <input type="number" id="books_20" name="books_20" step="0.01" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="books_30">$30 Books:</label>
+                    <input type="number" id="books_30" name="books_30" step="0.01" min="0" placeholder="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="books_50">$50 Books:</label>
+                    <input type="number" id="books_50" name="books_50" step="0.01" min="0" placeholder="0">
+                </div>
+                <div class="form-group"></div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="machine_sold">Machine Lottery Sold ($):</label>
+                <input type="number" id="machine_sold" name="machine_sold" step="0.01" min="0" placeholder="0" required>
+            </div>
+            <div class="form-group">
+                <label for="tickets_cashed">Tickets Cashed ($):</label>
+                <input type="number" id="tickets_cashed" name="tickets_cashed" step="0.01" min="0" placeholder="0" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="online_cashed">Online Cashed ($):</label>
+                <input type="number" id="online_cashed" name="online_cashed" step="0.01" min="0" placeholder="0" required>
+            </div>
+            <div class="form-group"></div>
+        </div>
+        
+        <button type="submit" class="submit-btn">Generate Report</button>
+    </form>
+</div>
+{% endif %}
+
+{% if show_report and report_data %}
+<div class="report-container">
+    <div class="report-header">
+        <div class="report-title">Daily Lottery Report</div>
+        <div class="report-date">{{ report_data.date }}</div>
+    </div>
+    
+    <div class="report-section">
+        <div class="section-title">Lottery Stock Totals</div>
+        <table class="report-table">
+            <tr>
+                <th>Description</th>
+                <th class="amount">Amount</th>
+            </tr>
+            <tr>
+                <td>Yesterday Closing ({{ report_data.yesterday }})</td>
+                <td class="amount">${{ "%.2f"|format(report_data.yesterday_closing) }}</td>
+            </tr>
+            <tr>
+                <td>Today Closing ({{ report_data.date }})</td>
+                <td class="amount">${{ "%.2f"|format(report_data.today_closing) }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="report-section">
+        <div class="section-title">New Books Opened</div>
+        <table class="report-table">
+            <tr>
+                <th>Book Type</th>
+                <th class="amount">Amount</th>
+            </tr>
+            <tr>
+                <td>$1 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_1) }}</td>
+            </tr>
+            <tr>
+                <td>$2 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_2) }}</td>
+            </tr>
+            <tr>
+                <td>$5 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_5) }}</td>
+            </tr>
+            <tr>
+                <td>$10 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_10) }}</td>
+            </tr>
+            <tr>
+                <td>$20 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_20) }}</td>
+            </tr>
+            <tr>
+                <td>$30 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_30) }}</td>
+            </tr>
+            <tr>
+                <td>$50 Books</td>
+                <td class="amount">${{ "%.2f"|format(report_data.books_50) }}</td>
+            </tr>
+            <tr style="font-weight: bold; background-color: #f5f5f5;">
+                <td>Total New Books Opened</td>
+                <td class="amount">${{ "%.2f"|format(report_data.total_new_books) }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="report-section">
+        <div class="section-title">Additional Sales & Transactions</div>
+        <table class="report-table">
+            <tr>
+                <th>Description</th>
+                <th class="amount">Amount</th>
+            </tr>
+            <tr>
+                <td>Machine Lottery Sold</td>
+                <td class="amount">${{ "%.2f"|format(report_data.machine_sold) }}</td>
+            </tr>
+            <tr>
+                <td>Tickets Cashed</td>
+                <td class="amount">${{ "%.2f"|format(report_data.tickets_cashed) }}</td>
+            </tr>
+            <tr>
+                <td>Online Cashed</td>
+                <td class="amount">${{ "%.2f"|format(report_data.online_cashed) }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="report-section">
+        <div class="section-title">Calculations</div>
+        <div class="calculation-step">
+            1. Total New Books Opened = ${{ "%.2f"|format(report_data.books_1) }} + ${{ "%.2f"|format(report_data.books_2) }} + ${{ "%.2f"|format(report_data.books_5) }} + ${{ "%.2f"|format(report_data.books_10) }} + ${{ "%.2f"|format(report_data.books_20) }} + ${{ "%.2f"|format(report_data.books_30) }} + ${{ "%.2f"|format(report_data.books_50) }} = ${{ "%.2f"|format(report_data.total_new_books) }}
+        </div>
+        <div class="calculation-step">
+            2. Net Total Scratch = (Yesterday Closing + Total New Books Opened) - Today Closing<br>
+            &nbsp;&nbsp;&nbsp;= (${{ "%.2f"|format(report_data.yesterday_closing) }} + ${{ "%.2f"|format(report_data.total_new_books) }}) - ${{ "%.2f"|format(report_data.today_closing) }} = ${{ "%.2f"|format(report_data.net_total_scratch) }}
+        </div>
+        <div class="calculation-step">
+            3. Total Lottery Sale = Net Total Scratch + Machine Lottery Sold<br>
+            &nbsp;&nbsp;&nbsp;= ${{ "%.2f"|format(report_data.net_total_scratch) }} + ${{ "%.2f"|format(report_data.machine_sold) }} = ${{ "%.2f"|format(report_data.total_lottery_sale) }}
+        </div>
+        <div class="calculation-step">
+            4. Current Date Lottery Deposit Amount = Total Lottery Sale - (Tickets Cashed + Online Cashed)<br>
+            &nbsp;&nbsp;&nbsp;= ${{ "%.2f"|format(report_data.total_lottery_sale) }} - (${{ "%.2f"|format(report_data.tickets_cashed) }} + ${{ "%.2f"|format(report_data.online_cashed) }}) = ${{ "%.2f"|format(report_data.lottery_deposit_amount) }}
+        </div>
+    </div>
+    
+    <div class="final-result">
+        <div style="font-size: 18px; font-weight: bold;">Current Date Lottery Deposit Amount</div>
+        <div class="final-amount">${{ "%.2f"|format(report_data.lottery_deposit_amount) }}</div>
+    </div>
+    
+    <button onclick="window.print()" class="print-btn">🖨️ Print Report</button>
+    <button onclick="window.location.href='{{ url_for('create_report') }}'" class="print-btn" style="background-color: #6c757d;">📝 Create New Report</button>
+</div>
+{% endif %}
+{% endblock %} 

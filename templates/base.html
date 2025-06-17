@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Lottery Stock Tracker{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-container {
+            background-color: #333;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .nav-menu {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+        }
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .nav-link:hover {
+            background-color: #555;
+        }
+        .nav-link.active {
+            background-color: #4CAF50;
+        }
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        .flash-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .flash-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .flash-error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <nav class="nav-container">
+        <div class="nav-menu">
+            <a href="{{ url_for('enter_stock') }}" class="nav-link {% if request.endpoint == 'enter_stock' %}active{% endif %}">
+                🎫 Enter Stock
+            </a>
+            <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
+                📊 Stock Reports
+            </a>
+            <a href="{{ url_for('create_report') }}" class="nav-link {% if request.endpoint == 'create_report' %}active{% endif %}">
+                📈 Create Report
+            </a>
+            <a href="{{ url_for('lottery_reports') }}" class="nav-link {% if request.endpoint == 'lottery_reports' %}active{% endif %}">
+                📋 Lottery Reports
+            </a>
+        </div>
+    </nav>
+
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

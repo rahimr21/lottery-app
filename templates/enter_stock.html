@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Stock - Lottery Stock Tracker{% endblock %}
+
+{% block extra_styles %}
+    <style>
+        #navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        input[type="number"] {
+            font-size: 24px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        button {
+            font-size: 18px;
+            padding: 8px 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        .flash-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .flash-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .flash-error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        #holder-display {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>🎫 Enter Lottery Stock</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if error %}
+        <div class="flash-message flash-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <label for="date">Date:</label>
+        <input type="date" name="date" value="{{ current_date }}" required><br><br>
+
+        <!-- Hidden inputs for all holders -->
+        {% for h in holder_order %}
+            <input type="hidden" name="holder_{{ h.number }}" id="holder_{{ h.number }}" value="{{ h.entered }}">
+        {% endfor %}
+
+        <div class="progress-bar">
+            <div class="progress" id="progress-bar"></div>
+        </div>
+
+        <div id="holder-display">
+            <h2 id="holder-label"></h2>
+            <input
+                id="current-input"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="Enter ticket number"
+                min="0"
+                required
+            >
+        </div>
+
+        <div id="navigation">
+            <button type="button" onclick="prevHolder()">⬅ Previous</button>
+            <button type="button" onclick="nextHolder()">Next ➡</button>
+        </div>
+
+        <br><br>
+        <button type="submit">Submit All</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const holders = {{ holder_order | tojson | safe }};
+        let index = 0;
+
+        const input = document.getElementById("current-input");
+        const label = document.getElementById("holder-label");
+        const progressBar = document.getElementById("progress-bar");
+
+        function updateView() {
+            const current = holders[index];
+            label.innerText = `Holder ${current.number} ($${current.value})`;
+
+            const hidden = document.getElementById(`holder_${current.number}`);
+            input.value = hidden.value || current.entered || '';
+            
+            // Update progress bar
+            const progress = ((index + 1) / holders.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function nextHolder() {
+            const current = holders[index];
+            document.getElementById(`holder_${current.number}`).value = input.value;
+
+            if (index < holders.length - 1) {
+                index++;
+                updateView();
+                input.focus();
+            }
+        }
+
+        function prevHolder() {
+            const current = holders[index];
+            document.getElementById(`holder_${current.number}`).value = input.value;
+
+            if (index > 0) {
+                index--;
+                updateView();
+                input.focus();
+            }
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight') {
+                nextHolder();
+            } else if (e.key === 'ArrowLeft') {
+                prevHolder();
+            }
+        });
+
+        updateView();
+    </script>
+{% endblock %}

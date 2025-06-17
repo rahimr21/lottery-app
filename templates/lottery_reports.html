@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Lottery Reports - Lottery Stock Tracker{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .reports-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .reports-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .reports-title {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .reports-table th,
+    .reports-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .reports-table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .amount {
+        text-align: right;
+        font-family: monospace;
+        font-weight: bold;
+    }
+    
+    .actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-edit {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .btn-edit:hover {
+        background-color: #0056b3;
+    }
+    
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-delete:hover {
+        background-color: #c82333;
+    }
+    
+    .btn-view {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .btn-view:hover {
+        background-color: #1e7e34;
+    }
+    
+    .edit-form {
+        display: none;
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .edit-form.active {
+        display: block;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        align-items: center;
+    }
+    
+    .form-group {
+        flex: 1;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    
+    .books-section {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+    
+    .books-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+    
+    .save-btn {
+        background-color: #28a745;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+    
+    .cancel-btn {
+        background-color: #6c757d;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .no-reports {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 18px;
+    }
+    
+    .create-report-link {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        margin-top: 20px;
+    }
+    
+    .create-report-link:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="reports-header">
+        <div class="reports-title">📋 Lottery Reports</div>
+        <p>View and edit your saved daily lottery reports</p>
+    </div>
+    
+    {% if reports %}
+    <table class="reports-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Yesterday Closing</th>
+                <th>Today Closing</th>
+                <th>Total New Books</th>
+                <th>Machine Sold</th>
+                <th>Net Total Scratch</th>
+                <th>Total Lottery Sale</th>
+                <th>Deposit Amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td><strong>{{ report.date }}</strong></td>
+                <td class="amount">${{ "%.2f"|format(report.yesterday_closing) }}</td>
+                <td class="amount">${{ "%.2f"|format(report.today_closing) }}</td>
+                <td class="amount">${{ "%.2f"|format(report.total_new_books) }}</td>
+                <td class="amount">${{ "%.2f"|format(report.machine_sold) }}</td>
+                <td class="amount">${{ "%.2f"|format(report.net_total_scratch) }}</td>
+                <td class="amount">${{ "%.2f"|format(report.total_lottery_sale) }}</td>
+                <td class="amount" style="color: #28a745; font-size: 16px;">${{ "%.2f"|format(report.lottery_deposit_amount) }}</td>
+                <td class="actions">
+                    <a href="{{ url_for('view_lottery_report', report_id=report.id) }}" class="btn btn-view">View</a>
+                    <button onclick="toggleEdit({{ report.id }})" class="btn btn-edit">Edit</button>
+                    <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this report?')">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                        <button type="submit" class="btn btn-delete">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="9">
+                    <div id="edit-form-{{ report.id }}" class="edit-form">
+                        <form method="POST">
+                            <input type="hidden" name="action" value="edit">
+                            <input type="hidden" name="report_id" value="{{ report.id }}">
+                            
+                            <div class="books-section">
+                                <div class="books-title">Edit New Books Opened ($)</div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="books_1_{{ report.id }}">$1 Books:</label>
+                                        <input type="number" id="books_1_{{ report.id }}" name="books_1" step="0.01" min="0" value="{{ report.books_1 }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="books_2_{{ report.id }}">$2 Books:</label>
+                                        <input type="number" id="books_2_{{ report.id }}" name="books_2" step="0.01" min="0" value="{{ report.books_2 }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="books_5_{{ report.id }}">$5 Books:</label>
+                                        <input type="number" id="books_5_{{ report.id }}" name="books_5" step="0.01" min="0" value="{{ report.books_5 }}">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="books_10_{{ report.id }}">$10 Books:</label>
+                                        <input type="number" id="books_10_{{ report.id }}" name="books_10" step="0.01" min="0" value="{{ report.books_10 }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="books_20_{{ report.id }}">$20 Books:</label>
+                                        <input type="number" id="books_20_{{ report.id }}" name="books_20" step="0.01" min="0" value="{{ report.books_20 }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="books_30_{{ report.id }}">$30 Books:</label>
+                                        <input type="number" id="books_30_{{ report.id }}" name="books_30" step="0.01" min="0" value="{{ report.books_30 }}">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="books_50_{{ report.id }}">$50 Books:</label>
+                                        <input type="number" id="books_50_{{ report.id }}" name="books_50" step="0.01" min="0" value="{{ report.books_50 }}">
+                                    </div>
+                                    <div class="form-group"></div>
+                                    <div class="form-group"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="machine_sold_{{ report.id }}">Machine Lottery Sold ($):</label>
+                                    <input type="number" id="machine_sold_{{ report.id }}" name="machine_sold" step="0.01" min="0" value="{{ report.machine_sold }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="tickets_cashed_{{ report.id }}">Tickets Cashed ($):</label>
+                                    <input type="number" id="tickets_cashed_{{ report.id }}" name="tickets_cashed" step="0.01" min="0" value="{{ report.tickets_cashed }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="online_cashed_{{ report.id }}">Online Cashed ($):</label>
+                                    <input type="number" id="online_cashed_{{ report.id }}" name="online_cashed" step="0.01" min="0" value="{{ report.online_cashed }}" required>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <button type="submit" class="save-btn">Save Changes</button>
+                                <button type="button" onclick="toggleEdit({{ report.id }})" class="cancel-btn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-reports">
+        <p>No lottery reports have been created yet.</p>
+        <a href="{{ url_for('create_report') }}" class="create-report-link">📈 Create Your First Report</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleEdit(reportId) {
+    const editForm = document.getElementById('edit-form-' + reportId);
+    editForm.classList.toggle('active');
+}
+</script>
+{% endblock %} 
