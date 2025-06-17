@@ -24,7 +24,7 @@ A comprehensive Flask web application for tracking lottery ticket stock, managin
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/lottery-app.git
+   git clone https://github.com/rahimr21/lottery-app.git
    cd lottery-app
    ```
 
@@ -88,6 +88,18 @@ A comprehensive Flask web application for tracking lottery ticket stock, managin
 
 ## 📖 Usage Guide
 
+### 👥 User Access Levels
+
+The application has two access levels:
+
+**Employee Access (No Password Required):**
+- 🏠 Enter Stock - Input daily lottery stock numbers
+- 📊 Stock Reports - View and manage stock data
+
+**Admin Access (Requires Passcode: `2222`):**
+- 📈 Create Report - Generate daily lottery reports  
+- 📋 Lottery Reports - View and manage saved reports
+
 ### 🏠 Home Page - Enter Stock
 - Enter lottery ticket stock numbers for all holders (1-56)
 - Automatic ticket value assignment based on holder numbers
@@ -99,17 +111,23 @@ A comprehensive Flask web application for tracking lottery ticket stock, managin
 - Delete specific entries or entire date records
 - View totals and grand totals by ticket value
 
-### 📈 Create Report
+### 📈 Create Report (Admin Only)
 - Generate daily lottery reports with automated calculations
 - Input fields for new books opened ($1, $2, $5, $10, $20, $30, $50)
 - Machine lottery sales, tickets cashed, and online cashed tracking
 - Automatic calculation of deposit amounts
 
-### 📋 Lottery Reports
+### 📋 Lottery Reports (Admin Only)
 - View all saved daily reports
 - Edit existing reports with real-time recalculation
 - View full detailed reports with print functionality
 - Delete reports as needed
+
+### 🔐 Admin Access
+- Click on admin-protected pages to see login prompt
+- Enter passcode `2222` to gain admin access
+- Admin status shown in navigation with logout option
+- Session-based authentication (logout removes access)
 
 ## 🔧 Ticket Value Mapping
 
@@ -183,10 +201,12 @@ lottery-app/
 ### Environment Variables
 
 - `SECRET_KEY`: Flask secret key (defaults to development key)
+- `ADMIN_PASSCODE`: Admin access passcode (defaults to "2222")
 
 ## 🔒 Security Notes
 
 - Change the default `SECRET_KEY` in production
+- Change the default `ADMIN_PASSCODE` from "2222" to a secure passcode
 - Use environment variables for sensitive configuration
 - Consider using a production WSGI server (e.g., Gunicorn) instead of the development server
 
@@ -211,7 +231,8 @@ If you encounter any issues or have questions, please open an issue on GitHub.
 - **v1.0.0** - Initial release with full lottery tracking functionality
 - **v1.1.0** - Added delete functionality and report viewing
 - **v1.2.0** - Improved UI and added Flask CLI commands
+- **v1.3.0** - Added admin authentication system for role-based access
 
 ---
 
-Made with ❤️ for lottery stock management 
+Made with ❤️ for lottery stock management

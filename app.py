@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, session
 import os
 import sqlite3
 from datetime import datetime
@@ -11,6 +11,49 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
+
+# Admin passcode (in production, this should be in environment variables)
+ADMIN_PASSCODE = os.environ.get('ADMIN_PASSCODE', '2222')
+
+def check_admin_access():
+    """Check if user has admin access"""
+    return session.get('admin_authenticated', False)
+
+def require_admin():
+    """Decorator to require admin access"""
+    from functools import wraps
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not check_admin_access():
+                return redirect(url_for('admin_login', next=request.url))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        passcode = request.form.get('passcode', '')
+        next_url = request.form.get('next', url_for('create_report'))
+        
+        if passcode == ADMIN_PASSCODE:
+            session['admin_authenticated'] = True
+            flash('Admin access granted!', 'success')
+            return redirect(next_url)
+        else:
+            flash('Invalid passcode. Please try again.', 'error')
+    
+    next_url = request.args.get('next', url_for('create_report'))
+    return render_template('admin_login.html', next=next_url)
+
+@app.route('/admin-logout')
+def admin_logout():
+    """Admin logout"""
+    session.pop('admin_authenticated', None)
+    flash('Admin access removed.', 'info')
+    return redirect(url_for('enter_stock'))
 
 def get_db_connection():
     # Ensure instance folder exists
@@ -301,6 +344,7 @@ def reports():
         conn.close()
 
 @app.route('/create-report', methods=['GET', 'POST'])
+@require_admin()
 def create_report():
     from datetime import timedelta
     conn = get_db_connection()
@@ -408,6 +452,7 @@ def create_report():
         conn.close()
 
 @app.route('/lottery-reports', methods=['GET', 'POST'])
+@require_admin()
 def lottery_reports():
     conn = get_db_connection()
     try:
@@ -491,6 +536,7 @@ def lottery_reports():
         conn.close()
 
 @app.route('/view-lottery-report/<int:report_id>')
+@require_admin()
 def view_lottery_report(report_id):
     conn = get_db_connection()
     try:

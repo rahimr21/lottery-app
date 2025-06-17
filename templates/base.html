@@ -19,6 +19,8 @@
             margin: 0 auto;
             display: flex;
             gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
         .nav-link {
             color: white;
@@ -26,12 +28,35 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             transition: background-color 0.3s;
+            white-space: nowrap;
         }
         .nav-link:hover {
             background-color: #555;
         }
         .nav-link.active {
             background-color: #4CAF50;
+        }
+        .nav-link.admin {
+            background-color: #dc3545;
+        }
+        .nav-link.admin:hover {
+            background-color: #c82333;
+        }
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .admin-status {
+            color: #28a745;
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            background-color: rgba(40, 167, 69, 0.1);
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
         }
         .content {
             max-width: 1200px;
@@ -51,6 +76,43 @@
             background-color: #f2dede;
             color: #a94442;
         }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .nav-menu {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+            
+            .nav-right {
+                margin-left: 0;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+            
+            .nav-link {
+                text-align: center;
+                padding: 0.75rem 1rem;
+                font-size: 14px;
+            }
+            
+            .admin-status {
+                font-size: 11px;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-container {
+                padding: 0.5rem;
+            }
+            
+            .nav-link {
+                font-size: 12px;
+                padding: 0.5rem 0.75rem;
+            }
+        }
     </style>
     {% block extra_styles %}{% endblock %}
 </head>
@@ -63,12 +125,28 @@
             <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
                 📊 Stock Reports
             </a>
+            {% if session.get('admin_authenticated') %}
             <a href="{{ url_for('create_report') }}" class="nav-link {% if request.endpoint == 'create_report' %}active{% endif %}">
                 📈 Create Report
             </a>
             <a href="{{ url_for('lottery_reports') }}" class="nav-link {% if request.endpoint == 'lottery_reports' %}active{% endif %}">
                 📋 Lottery Reports
             </a>
+            {% else %}
+            <a href="{{ url_for('admin_login', next=url_for('create_report')) }}" class="nav-link admin">
+                🔐 Create Report (Admin)
+            </a>
+            <a href="{{ url_for('admin_login', next=url_for('lottery_reports')) }}" class="nav-link admin">
+                🔐 Lottery Reports (Admin)
+            </a>
+            {% endif %}
+            
+            <div class="nav-right">
+                {% if session.get('admin_authenticated') %}
+                <span class="admin-status">👑 Admin Mode</span>
+                <a href="{{ url_for('admin_logout') }}" class="nav-link admin">🚪 Logout</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
 

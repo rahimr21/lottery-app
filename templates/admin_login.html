@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Access Required - Lottery Stock Tracker{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 40px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .login-header {
+        margin-bottom: 30px;
+    }
+    
+    .login-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .login-subtitle {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+    
+    .form-group input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+    }
+    
+    .login-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .login-btn:hover {
+        background-color: #0056b3;
+    }
+    
+    .back-link {
+        color: #666;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    .back-link:hover {
+        color: #333;
+        text-decoration: underline;
+    }
+    
+    .admin-icon {
+        font-size: 48px;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+    
+    .note {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #666;
+        text-align: left;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-header">
+        <div class="admin-icon">🔐</div>
+        <div class="login-title">Admin Access Required</div>
+        <div class="login-subtitle">This page is restricted to authorized personnel only</div>
+    </div>
+    
+    <form method="POST">
+        <input type="hidden" name="next" value="{{ next }}">
+        
+        <div class="form-group">
+            <label for="passcode">Enter Admin Passcode:</label>
+            <input type="password" 
+                   id="passcode" 
+                   name="passcode" 
+                   placeholder="••••" 
+                   required 
+                   maxlength="10"
+                   autocomplete="off">
+        </div>
+        
+        <button type="submit" class="login-btn">🔓 Access Admin Panel</button>
+    </form>
+    
+    <a href="{{ url_for('enter_stock') }}" class="back-link">← Back to Main Page</a>
+    
+    <div class="note">
+        <strong>Note:</strong> Employee access is available for "Enter Stock" and "Stock Reports" pages without authentication.
+    </div>
+</div>
+
+<script>
+// Auto-focus on passcode input
+document.getElementById('passcode').focus();
+
+// Clear any error messages after 5 seconds
+setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        if (alert.textContent.includes('Invalid')) {
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.remove();
+            }, 300);
+        }
+    });
+}, 5000);
+</script>
+{% endblock %} 

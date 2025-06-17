@@ -62,6 +62,77 @@
             padding-top: 10px;
             border-top: 2px solid #ddd;
         }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 24px;
+                text-align: center;
+            }
+            
+            .date-selector {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .totals-section {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+            }
+            
+            .edit-form input {
+                width: 60px;
+                padding: 4px;
+            }
+            
+            .edit-form button {
+                padding: 4px 8px;
+                margin-left: 5px;
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .date-selector {
+                padding: 10px;
+            }
+            
+            .totals-section {
+                padding: 10px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+            }
+            
+            .edit-form input {
+                width: 50px;
+                padding: 3px;
+                font-size: 12px;
+            }
+            
+            .edit-form button {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+            
+            button {
+                font-size: 11px !important;
+                padding: 4px 8px !important;
+            }
+        }
     </style>
 {% endblock %}
 
