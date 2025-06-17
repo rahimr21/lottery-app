@@ -55,6 +55,125 @@
             border-radius: 10px;
             margin: 20px 0;
         }
+        
+        /* Extra Tickets Section Styles */
+        #extra-tickets-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+        }
+        
+        .extra-ticket-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .extra-ticket-row label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .extra-price-label {
+            min-width: 80px;
+        }
+        
+        .extra-stock-label {
+            min-width: 100px;
+        }
+        
+        .extra-price-input {
+            width: 100px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        
+        .extra-stock-input {
+            width: 120px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        
+        .remove-ticket-btn {
+            padding: 5px 8px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .add-ticket-btn {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .extra-ticket-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+                padding: 15px;
+                background-color: white;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                border: 1px solid #ddd;
+            }
+            
+            .extra-price-label,
+            .extra-stock-label {
+                min-width: unset;
+                margin-bottom: 5px;
+            }
+            
+            .extra-price-input,
+            .extra-stock-input {
+                width: 100%;
+                max-width: none;
+                padding: 10px;
+                font-size: 18px;
+                box-sizing: border-box;
+            }
+            
+            .remove-ticket-btn {
+                align-self: flex-end;
+                margin-top: 10px;
+                padding: 8px 12px;
+                font-size: 16px;
+            }
+            
+            #extra-tickets-section {
+                padding: 15px;
+            }
+            
+            .add-ticket-btn {
+                padding: 10px 15px;
+                font-size: 16px;
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .extra-ticket-row {
+                padding: 12px;
+            }
+            
+            .extra-price-input,
+            .extra-stock-input {
+                padding: 12px;
+                font-size: 20px;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -107,20 +226,20 @@
         <br><br>
 
         <!-- Extra Tickets Section -->
-        <div id="extra-tickets-section" style="margin-top: 30px; padding: 20px; background-color: #f5f5f5; border-radius: 10px;">
+        <div id="extra-tickets-section">
             <h3>📋 Extra Tickets (Not in Holders)</h3>
             <p>Enter any additional tickets that are not in holders:</p>
             
             <div id="extra-tickets-container">
-                <div class="extra-ticket-row" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
-                    <label style="min-width: 80px;">Price ($):</label>
-                    <input type="number" name="extra_price_1" placeholder="Price" min="1" style="width: 100px; padding: 5px;">
-                    <label style="min-width: 100px;">Stock Number:</label>
-                    <input type="number" name="extra_stock_1" placeholder="Stock #" min="0" style="width: 120px; padding: 5px;">
+                <div class="extra-ticket-row">
+                    <label class="extra-price-label">Price ($):</label>
+                    <input type="number" name="extra_price_1" placeholder="Price" min="1" class="extra-price-input">
+                    <label class="extra-stock-label">Stock Number:</label>
+                    <input type="number" name="extra_stock_1" placeholder="Stock #" min="0" class="extra-stock-input">
                 </div>
             </div>
             
-            <button type="button" onclick="addExtraTicketRow()" style="margin-top: 10px; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
+            <button type="button" onclick="addExtraTicketRow()" class="add-ticket-btn">
                 + Add Another Extra Ticket
             </button>
         </div>
@@ -190,14 +309,13 @@
             const container = document.getElementById('extra-tickets-container');
             const newRow = document.createElement('div');
             newRow.className = 'extra-ticket-row';
-            newRow.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
             
             newRow.innerHTML = `
-                <label style="min-width: 80px;">Price ($):</label>
-                <input type="number" name="extra_price_${extraTicketCount}" placeholder="Price" min="1" style="width: 100px; padding: 5px;">
-                <label style="min-width: 100px;">Stock Number:</label>
-                <input type="number" name="extra_stock_${extraTicketCount}" placeholder="Stock #" min="0" style="width: 120px; padding: 5px;">
-                <button type="button" onclick="removeExtraTicketRow(this)" style="padding: 5px 8px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">×</button>
+                <label class="extra-price-label">Price ($):</label>
+                <input type="number" name="extra_price_${extraTicketCount}" placeholder="Price" min="1" class="extra-price-input">
+                <label class="extra-stock-label">Stock Number:</label>
+                <input type="number" name="extra_stock_${extraTicketCount}" placeholder="Stock #" min="0" class="extra-stock-input">
+                <button type="button" onclick="removeExtraTicketRow(this)" class="remove-ticket-btn">×</button>
             `;
             
             container.appendChild(newRow);
