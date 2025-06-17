@@ -64,6 +64,28 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def get_daily_grand_total(date):
+    """Calculate the grand total for a given date including both holder tickets and extra tickets."""
+    conn = get_db_connection()
+    try:
+        # Calculate total from holder tickets
+        holder_total = conn.execute('''
+            SELECT SUM(stock_number * ticket_value) as total
+            FROM lottery_stock 
+            WHERE date = ?
+        ''', (date,)).fetchone()['total'] or 0
+        
+        # Calculate total from extra tickets
+        extra_total = conn.execute('''
+            SELECT SUM(stock_number * ticket_price) as total
+            FROM extra_tickets 
+            WHERE date = ?
+        ''', (date,)).fetchone()['total'] or 0
+        
+        return holder_total + extra_total
+    finally:
+        conn.close()
+
 def init_database():
     """Initialize the database with required tables and indexes."""
     # Ensure instance folder exists
@@ -83,6 +105,17 @@ def init_database():
             ticket_value INTEGER NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(date, holder_number)
+        )
+    ''')
+    
+    # Create a table for extra tickets (not in holders)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS extra_tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            ticket_price INTEGER NOT NULL CHECK(ticket_price > 0),
+            stock_number INTEGER NOT NULL CHECK(stock_number >= 0),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
@@ -133,14 +166,24 @@ def init_db_command():
 
 # Real-world ticket value mapping by holder number
 holder_ticket_values = {}
+# Holders 1-4: $30
 for i in range(1, 5): holder_ticket_values[i] = 30
+# Holders 5-8: $50
 for i in range(5, 9): holder_ticket_values[i] = 50
-for i in range(9, 14): holder_ticket_values[i] = 20
-for i in range(14, 32): holder_ticket_values[i] = 10
-for i in range(32, 42): holder_ticket_values[i] = 5
-holder_ticket_values[42] = 2
-for i in range(49, 57): holder_ticket_values[i] = 2
-for i in range(43, 49): holder_ticket_values[i] = 1
+# Holders 9-14: $20
+for i in range(9, 15): holder_ticket_values[i] = 20
+# Holders 15-42: $10
+for i in range(15, 43): holder_ticket_values[i] = 10
+# Holders 33-41: $5
+for i in range(33, 42): holder_ticket_values[i] = 5
+# Holder 42: $10
+holder_ticket_values[42] = 10
+# Holders 43-46: $1
+for i in range(43, 47): holder_ticket_values[i] = 1
+# Holders 47-55: $2
+for i in range(47, 56): holder_ticket_values[i] = 2
+# Holder 56: $5
+holder_ticket_values[56] = 5
 
 @app.route('/', methods=['GET', 'POST'])
 def enter_stock():
@@ -193,13 +236,51 @@ def enter_stock():
                         ticket_value = holder_ticket_values.get(i, 0)
                         entries.append((date, i, stock_number, ticket_value))
 
+                # Handle extra tickets
+                extra_ticket_entries = []
+                extra_index = 1
+                while True:
+                    price_field = f'extra_price_{extra_index}'
+                    stock_field = f'extra_stock_{extra_index}'
+                    
+                    price = request.form.get(price_field)
+                    stock = request.form.get(stock_field)
+                    
+                    if not price and not stock:
+                        break
+                    
+                    if price and stock:
+                        try:
+                            price = int(price)
+                            stock = int(stock)
+                            if price <= 0:
+                                raise ValueError(f"Extra ticket price must be positive")
+                            if stock < 0:
+                                raise ValueError(f"Extra ticket stock number cannot be negative")
+                            extra_ticket_entries.append((date, price, stock))
+                        except ValueError as e:
+                            raise ValueError(f"Invalid extra ticket entry {extra_index}: {str(e)}")
+                    elif price or stock:
+                        raise ValueError(f"Both price and stock number must be provided for extra ticket {extra_index}")
+                    
+                    extra_index += 1
+
                 if missing:
                     error_message = f"Please fill in all holders. Missing: {missing}"
                 else:
+                    # Insert holder entries
                     conn.executemany('''
                         INSERT INTO lottery_stock (date, holder_number, stock_number, ticket_value)
                         VALUES (?, ?, ?, ?)
                     ''', entries)
+                    
+                    # Insert extra ticket entries
+                    if extra_ticket_entries:
+                        conn.executemany('''
+                            INSERT INTO extra_tickets (date, ticket_price, stock_number)
+                            VALUES (?, ?, ?)
+                        ''', extra_ticket_entries)
+                    
                     conn.commit()
                     flash('Stock numbers successfully recorded!', 'success')
                     return redirect(url_for('enter_stock'))
@@ -309,7 +390,7 @@ def reports():
             ORDER BY holder_number
         ''', (selected_date,)).fetchall()
         
-        # Calculate totals by ticket value
+        # Calculate totals by ticket value from holders
         totals = conn.execute('''
             SELECT 
                 ticket_value,
@@ -321,12 +402,40 @@ def reports():
             ORDER BY ticket_value DESC
         ''', (selected_date,)).fetchall()
         
-        # Calculate grand total
-        grand_total = conn.execute('''
+        # Get extra tickets for the selected date
+        extra_tickets = conn.execute('''
+            SELECT * 
+            FROM extra_tickets 
+            WHERE date = ? 
+            ORDER BY ticket_price DESC, id
+        ''', (selected_date,)).fetchall()
+        
+        # Calculate totals by ticket price from extra tickets
+        extra_totals = conn.execute('''
+            SELECT 
+                ticket_price as ticket_value,
+                SUM(stock_number) as total_tickets,
+                SUM(stock_number * ticket_price) as total_value
+            FROM extra_tickets 
+            WHERE date = ? 
+            GROUP BY ticket_price
+            ORDER BY ticket_price DESC
+        ''', (selected_date,)).fetchall()
+        
+        # Calculate grand total (holders + extra tickets)
+        holder_total = conn.execute('''
             SELECT SUM(stock_number * ticket_value) as total
             FROM lottery_stock 
             WHERE date = ?
         ''', (selected_date,)).fetchone()['total'] or 0
+        
+        extra_total = conn.execute('''
+            SELECT SUM(stock_number * ticket_price) as total
+            FROM extra_tickets 
+            WHERE date = ?
+        ''', (selected_date,)).fetchone()['total'] or 0
+        
+        grand_total = holder_total + extra_total
 
         return render_template(
             'reports.html',
@@ -334,6 +443,8 @@ def reports():
             selected_date=selected_date,
             entries=entries,
             totals=totals,
+            extra_tickets=extra_tickets,
+            extra_totals=extra_totals,
             grand_total=grand_total
         )
     except Exception as e:
@@ -355,27 +466,47 @@ def create_report():
             # Get form data
             selected_date = request.form['date']
             
-            # Get lottery totals from lottery_stock table
-            today_closing = conn.execute('''
-                SELECT SUM(stock_number * ticket_value) as total
-                FROM lottery_stock 
-                WHERE date = ?
-            ''', (selected_date,)).fetchone()['total']
+            # Check if override values are provided
+            override_today = request.form.get('override_today_closing')
+            override_yesterday = request.form.get('override_yesterday_closing')
+            
+            # Get lottery totals including both holder tickets and extra tickets
+            if override_today and override_today.strip():
+                today_closing = float(override_today)
+            else:
+                today_closing = get_daily_grand_total(selected_date)
             
             # Calculate yesterday's date
             selected_dt = datetime.strptime(selected_date, '%Y-%m-%d')
             yesterday = (selected_dt - timedelta(days=1)).strftime('%Y-%m-%d')
             
-            yesterday_closing = conn.execute('''
-                SELECT SUM(stock_number * ticket_value) as total
-                FROM lottery_stock 
-                WHERE date = ?
-            ''', (yesterday,)).fetchone()['total']
+            if override_yesterday and override_yesterday.strip():
+                yesterday_closing = float(override_yesterday)
+            else:
+                yesterday_closing = get_daily_grand_total(yesterday)
             
             # Check if we have data for both dates
-            if today_closing is None:
+            # Check if there's any lottery data for today (either holders or extra tickets)
+            today_has_data = conn.execute('''
+                SELECT COUNT(*) as count FROM (
+                    SELECT 1 FROM lottery_stock WHERE date = ?
+                    UNION
+                    SELECT 1 FROM extra_tickets WHERE date = ?
+                )
+            ''', (selected_date, selected_date)).fetchone()['count'] > 0
+            
+            # Check if there's any lottery data for yesterday
+            yesterday_has_data = conn.execute('''
+                SELECT COUNT(*) as count FROM (
+                    SELECT 1 FROM lottery_stock WHERE date = ?
+                    UNION
+                    SELECT 1 FROM extra_tickets WHERE date = ?
+                )
+            ''', (yesterday, yesterday)).fetchone()['count'] > 0
+            
+            if not today_has_data:
                 error_message = f'No lottery stock data found for today ({selected_date}). Please enter stock data first.'
-            elif yesterday_closing is None:
+            elif not yesterday_has_data:
                 error_message = f'No lottery stock data found for yesterday ({yesterday}). Cannot generate report.'
             else:
                 # Get user input values
@@ -441,7 +572,59 @@ def create_report():
         
         # GET request or POST with errors - show form
         current_date = datetime.now().strftime('%Y-%m-%d')
-        return render_template('create_report.html', current_date=current_date, show_report=False, error=error_message)
+        
+        # Get daily totals for current date to display
+        totals = []
+        extra_totals = []
+        today_closing_value = 0
+        yesterday_closing_value = 0
+        
+        # If a date is selected (GET parameter), get totals for that date
+        selected_date = request.args.get('date', current_date)
+        if selected_date:
+            try:
+                # Calculate totals by ticket value from holders
+                totals = conn.execute('''
+                    SELECT 
+                        ticket_value,
+                        SUM(stock_number) as total_tickets,
+                        SUM(stock_number * ticket_value) as total_value
+                    FROM lottery_stock 
+                    WHERE date = ? 
+                    GROUP BY ticket_value
+                    ORDER BY ticket_value DESC
+                ''', (selected_date,)).fetchall()
+                
+                # Calculate totals by ticket price from extra tickets
+                extra_totals = conn.execute('''
+                    SELECT 
+                        ticket_price as ticket_value,
+                        SUM(stock_number) as total_tickets,
+                        SUM(stock_number * ticket_price) as total_value
+                    FROM extra_tickets 
+                    WHERE date = ? 
+                    GROUP BY ticket_price
+                    ORDER BY ticket_price DESC
+                ''', (selected_date,)).fetchall()
+                
+                # Get closing values
+                today_closing_value = get_daily_grand_total(selected_date)
+                selected_dt = datetime.strptime(selected_date, '%Y-%m-%d')
+                yesterday = (selected_dt - timedelta(days=1)).strftime('%Y-%m-%d')
+                yesterday_closing_value = get_daily_grand_total(yesterday)
+                
+            except Exception as e:
+                logger.error(f"Error getting daily totals: {str(e)}")
+        
+        return render_template('create_report.html', 
+                             current_date=current_date, 
+                             selected_date=selected_date,
+                             show_report=False, 
+                             error=error_message,
+                             totals=totals,
+                             extra_totals=extra_totals,
+                             today_closing_value=today_closing_value,
+                             yesterday_closing_value=yesterday_closing_value)
         
     except Exception as e:
         logger.error(f"Error in create_report: {str(e)}")
@@ -476,16 +659,28 @@ def lottery_reports():
                     tickets_cashed = float(request.form.get('tickets_cashed', 0) or 0)
                     online_cashed = float(request.form.get('online_cashed', 0) or 0)
                     
+                    # Check for override values
+                    override_today = request.form.get('override_today_closing')
+                    override_yesterday = request.form.get('override_yesterday_closing')
+                    
                     # Get existing report data for date calculations
                     existing_report = conn.execute('''
-                        SELECT yesterday_closing, today_closing 
+                        SELECT date, yesterday_closing, today_closing 
                         FROM daily_reports 
                         WHERE id = ?
                     ''', (report_id,)).fetchone()
                     
                     if existing_report:
-                        yesterday_closing = existing_report['yesterday_closing']
-                        today_closing = existing_report['today_closing']
+                        # Use override values if provided, otherwise use existing values
+                        if override_today and override_today.strip():
+                            today_closing = float(override_today)
+                        else:
+                            today_closing = existing_report['today_closing']
+                            
+                        if override_yesterday and override_yesterday.strip():
+                            yesterday_closing = float(override_yesterday)
+                        else:
+                            yesterday_closing = existing_report['yesterday_closing']
                         
                         # Recalculate all values
                         total_new_books = books_1 + books_2 + books_5 + books_10 + books_20 + books_30 + books_50
@@ -493,16 +688,18 @@ def lottery_reports():
                         total_lottery_sale = net_total_scratch + machine_sold
                         lottery_deposit_amount = total_lottery_sale - (tickets_cashed + online_cashed)
                         
-                        # Update the report
+                        # Update the report (including potentially overridden closing values)
                         conn.execute('''
                             UPDATE daily_reports SET
+                                yesterday_closing = ?, today_closing = ?,
                                 books_1 = ?, books_2 = ?, books_5 = ?, books_10 = ?, 
                                 books_20 = ?, books_30 = ?, books_50 = ?,
                                 machine_sold = ?, tickets_cashed = ?, online_cashed = ?,
                                 total_new_books = ?, net_total_scratch = ?, 
                                 total_lottery_sale = ?, lottery_deposit_amount = ?
                             WHERE id = ?
-                        ''', (books_1, books_2, books_5, books_10, books_20, books_30, books_50,
+                        ''', (yesterday_closing, today_closing,
+                              books_1, books_2, books_5, books_10, books_20, books_30, books_50,
                               machine_sold, tickets_cashed, online_cashed,
                               total_new_books, net_total_scratch, total_lottery_sale, 
                               lottery_deposit_amount, report_id))
@@ -555,6 +752,33 @@ def view_lottery_report(report_id):
         report_dt = datetime.strptime(report['date'], '%Y-%m-%d')
         yesterday = (report_dt - timedelta(days=1)).strftime('%Y-%m-%d')
         
+        # Get daily totals data for the report date (same as stock reports page)
+        selected_date = report['date']
+        
+        # Calculate totals by ticket value from holders
+        totals = conn.execute('''
+            SELECT 
+                ticket_value,
+                SUM(stock_number) as total_tickets,
+                SUM(stock_number * ticket_value) as total_value
+            FROM lottery_stock 
+            WHERE date = ? 
+            GROUP BY ticket_value
+            ORDER BY ticket_value DESC
+        ''', (selected_date,)).fetchall()
+        
+        # Calculate totals by ticket price from extra tickets
+        extra_totals = conn.execute('''
+            SELECT 
+                ticket_price as ticket_value,
+                SUM(stock_number) as total_tickets,
+                SUM(stock_number * ticket_price) as total_value
+            FROM extra_tickets 
+            WHERE date = ? 
+            GROUP BY ticket_price
+            ORDER BY ticket_price DESC
+        ''', (selected_date,)).fetchall()
+        
         # Prepare data for template (same format as create_report)
         report_data = {
             'date': report['date'],
@@ -577,7 +801,11 @@ def view_lottery_report(report_id):
             'lottery_deposit_amount': report['lottery_deposit_amount']
         }
         
-        return render_template('view_lottery_report.html', report_data=report_data, show_report=True)
+        return render_template('view_lottery_report.html', 
+                             report_data=report_data, 
+                             totals=totals,
+                             extra_totals=extra_totals,
+                             show_report=True)
         
     except Exception as e:
         logger.error(f"Error viewing lottery report: {str(e)}")

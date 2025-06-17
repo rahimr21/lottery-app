@@ -25,17 +25,18 @@
     
     .reports-table {
         width: 100%;
-        min-width: 800px;
+        min-width: 1000px;
         border-collapse: collapse;
         background-color: white;
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-size: 13px;
     }
     
     .reports-table th,
     .reports-table td {
-        padding: 12px;
+        padding: 6px 4px;
         text-align: left;
         border-bottom: 1px solid #ddd;
         white-space: nowrap;
@@ -51,23 +52,28 @@
         text-align: right;
         font-family: monospace;
         font-weight: bold;
+        font-size: 11px;
+        padding: 6px 2px;
     }
     
     .actions {
         display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 2px;
+        align-items: center;
+        width: 80px;
     }
     
     .btn {
-        padding: 6px 12px;
+        padding: 3px 6px;
         border: none;
-        border-radius: 4px;
+        border-radius: 3px;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 10px;
         text-decoration: none;
         display: inline-block;
         white-space: nowrap;
+        margin: 1px;
     }
     
     .btn-edit {
@@ -168,6 +174,27 @@
         cursor: pointer;
     }
     
+    /* Override section styles */
+    .override-section {
+        background-color: #f8d7da;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .override-checkbox {
+        margin-bottom: 10px;
+    }
+    
+    .override-fields {
+        display: none;
+    }
+    
+    .override-fields.active {
+        display: block;
+    }
+    
     .no-reports {
         text-align: center;
         padding: 40px;
@@ -190,6 +217,28 @@
         color: white;
     }
     
+    /* Desktop optimization */
+    @media (min-width: 1200px) {
+        .reports-table {
+            min-width: 1100px;
+            font-size: 14px;
+        }
+        
+        .reports-table th,
+        .reports-table td {
+            padding: 8px 6px;
+        }
+        
+        .btn {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+        
+        .amount {
+            font-size: 12px;
+        }
+    }
+
     /* Mobile responsiveness */
     @media (max-width: 768px) {
         .reports-container {
@@ -298,28 +347,28 @@
         <table class="reports-table">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Yesterday Closing</th>
-                    <th>Today Closing</th>
-                    <th>Total New Books</th>
-                    <th>Machine Sold</th>
-                    <th>Net Total Scratch</th>
-                    <th>Total Lottery Sale</th>
-                    <th>Deposit Amount</th>
-                    <th>Actions</th>
+                    <th style="width: 80px;">Date</th>
+                    <th style="width: 80px;">Yesterday</th>
+                    <th style="width: 80px;">Today</th>
+                    <th style="width: 80px;">New Books</th>
+                    <th style="width: 80px;">Machine</th>
+                    <th style="width: 80px;">Net Scratch</th>
+                    <th style="width: 80px;">Total Sale</th>
+                    <th style="width: 90px;">Deposit</th>
+                    <th style="width: 80px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for report in reports %}
                 <tr>
                     <td><strong>{{ report.date }}</strong></td>
-                    <td class="amount">${{ "%.2f"|format(report.yesterday_closing) }}</td>
-                    <td class="amount">${{ "%.2f"|format(report.today_closing) }}</td>
-                    <td class="amount">${{ "%.2f"|format(report.total_new_books) }}</td>
-                    <td class="amount">${{ "%.2f"|format(report.machine_sold) }}</td>
-                    <td class="amount">${{ "%.2f"|format(report.net_total_scratch) }}</td>
-                    <td class="amount">${{ "%.2f"|format(report.total_lottery_sale) }}</td>
-                    <td class="amount" style="color: #28a745; font-size: 16px;">${{ "%.2f"|format(report.lottery_deposit_amount) }}</td>
+                    <td class="amount">${{ "%.0f"|format(report.yesterday_closing) if report.yesterday_closing == (report.yesterday_closing|int) else "%.2f"|format(report.yesterday_closing) }}</td>
+                    <td class="amount">${{ "%.0f"|format(report.today_closing) if report.today_closing == (report.today_closing|int) else "%.2f"|format(report.today_closing) }}</td>
+                    <td class="amount">${{ "%.0f"|format(report.total_new_books) if report.total_new_books == (report.total_new_books|int) else "%.2f"|format(report.total_new_books) }}</td>
+                    <td class="amount">${{ "%.0f"|format(report.machine_sold) if report.machine_sold == (report.machine_sold|int) else "%.2f"|format(report.machine_sold) }}</td>
+                    <td class="amount">${{ "%.0f"|format(report.net_total_scratch) if report.net_total_scratch == (report.net_total_scratch|int) else "%.2f"|format(report.net_total_scratch) }}</td>
+                    <td class="amount">${{ "%.0f"|format(report.total_lottery_sale) if report.total_lottery_sale == (report.total_lottery_sale|int) else "%.2f"|format(report.total_lottery_sale) }}</td>
+                    <td class="amount" style="color: #28a745; font-weight: bold;">${{ "%.0f"|format(report.lottery_deposit_amount) if report.lottery_deposit_amount == (report.lottery_deposit_amount|int) else "%.2f"|format(report.lottery_deposit_amount) }}</td>
                     <td class="actions">
                         <a href="{{ url_for('view_lottery_report', report_id=report.id) }}" class="btn btn-view">View</a>
                         <button onclick="toggleEdit({{ report.id }})" class="btn btn-edit">Edit</button>
@@ -392,6 +441,32 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Override Section -->
+                                <div class="override-section">
+                                    <div class="override-checkbox">
+                                        <input type="checkbox" id="enableOverride_{{ report.id }}" onchange="toggleOverrideEdit({{ report.id }})">
+                                        <label for="enableOverride_{{ report.id }}" style="margin-left: 5px; font-weight: bold; color: #721c24;">
+                                            ⚠️ Override Closing Values (Use with caution)
+                                        </label>
+                                    </div>
+                                    <div class="override-fields" id="overrideFields_{{ report.id }}">
+                                        <div style="margin-bottom: 10px; font-size: 12px; color: #721c24;">
+                                            Current: Yesterday ${{ "%.2f"|format(report.yesterday_closing) }} | Today ${{ "%.2f"|format(report.today_closing) }}
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="override_today_closing_{{ report.id }}">Override Today Closing ($):</label>
+                                                <input type="number" id="override_today_closing_{{ report.id }}" name="override_today_closing" step="0.01" placeholder="Leave empty to keep current value">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="override_yesterday_closing_{{ report.id }}">Override Yesterday Closing ($):</label>
+                                                <input type="number" id="override_yesterday_closing_{{ report.id }}" name="override_yesterday_closing" step="0.01" placeholder="Leave empty to keep current value">
+                                            </div>
+                                            <div class="form-group"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div style="margin-top: 15px;">
                                     <button type="submit" class="save-btn">Save Changes</button>
                                     <button type="button" onclick="toggleEdit({{ report.id }})" class="cancel-btn">Cancel</button>
@@ -416,6 +491,20 @@
 function toggleEdit(reportId) {
     const editForm = document.getElementById('edit-form-' + reportId);
     editForm.classList.toggle('active');
+}
+
+function toggleOverrideEdit(reportId) {
+    const checkbox = document.getElementById('enableOverride_' + reportId);
+    const fields = document.getElementById('overrideFields_' + reportId);
+    
+    if (checkbox.checked) {
+        fields.classList.add('active');
+    } else {
+        fields.classList.remove('active');
+        // Clear override values when unchecked
+        document.getElementById('override_today_closing_' + reportId).value = '';
+        document.getElementById('override_yesterday_closing_' + reportId).value = '';
+    }
 }
 </script>
 {% endblock %} 

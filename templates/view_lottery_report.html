@@ -58,6 +58,30 @@
         border-bottom: 1px solid #ddd;
     }
     
+    /* Compact table styles for printing */
+    .compact-table {
+        width: auto;
+        margin: 10px 0;
+        display: inline-block;
+        margin-right: 20px;
+    }
+    
+    .compact-table th,
+    .compact-table td {
+        padding: 4px 8px;
+        font-size: 14px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .compact-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+    
+    .daily-totals-section {
+        margin-bottom: 20px;
+    }
+    
     .report-table th {
         background-color: #f5f5f5;
         font-weight: bold;
@@ -141,15 +165,33 @@
             box-shadow: none;
             border: none;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
         
         .report-header {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         .final-result {
             page-break-inside: avoid;
+        }
+        
+        .compact-table {
+            margin-bottom: 10px;
+        }
+        
+        .compact-table th,
+        .compact-table td {
+            padding: 3px 6px;
+            font-size: 12px;
+        }
+        
+        .daily-totals-section {
+            margin-bottom: 15px;
+        }
+        
+        .report-section {
+            margin-bottom: 15px;
         }
     }
 </style>
@@ -165,6 +207,35 @@
     <div class="report-header">
         <div class="report-title">Daily Lottery Report</div>
         <div class="report-date">{{ report_data.date }}</div>
+    </div>
+    
+    <div class="report-section daily-totals-section">
+        <div class="section-title">Daily Totals</div>
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th>Ticket Value</th>
+                    <th>Total Tickets</th>
+                    <th>Total Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for total in totals %}
+                    <tr>
+                        <td>${{ total.ticket_value }} (Holders)</td>
+                        <td>{{ total.total_tickets }}</td>
+                        <td>${{ total.total_value }}</td>
+                    </tr>
+                {% endfor %}
+                {% for extra_total in extra_totals %}
+                    <tr style="background-color: #e8f4fd;">
+                        <td>${{ extra_total.ticket_value }} (Extra)</td>
+                        <td>{{ extra_total.total_tickets }}</td>
+                        <td>${{ extra_total.total_value }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     
     <div class="report-section">
@@ -187,7 +258,7 @@
     
     <div class="report-section">
         <div class="section-title">New Books Opened</div>
-        <table class="report-table">
+        <table class="compact-table">
             <tr>
                 <th>Book Type</th>
                 <th class="amount">Amount</th>

@@ -105,6 +105,27 @@
         </div>
 
         <br><br>
+
+        <!-- Extra Tickets Section -->
+        <div id="extra-tickets-section" style="margin-top: 30px; padding: 20px; background-color: #f5f5f5; border-radius: 10px;">
+            <h3>📋 Extra Tickets (Not in Holders)</h3>
+            <p>Enter any additional tickets that are not in holders:</p>
+            
+            <div id="extra-tickets-container">
+                <div class="extra-ticket-row" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                    <label style="min-width: 80px;">Price ($):</label>
+                    <input type="number" name="extra_price_1" placeholder="Price" min="1" style="width: 100px; padding: 5px;">
+                    <label style="min-width: 100px;">Stock Number:</label>
+                    <input type="number" name="extra_stock_1" placeholder="Stock #" min="0" style="width: 120px; padding: 5px;">
+                </div>
+            </div>
+            
+            <button type="button" onclick="addExtraTicketRow()" style="margin-top: 10px; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                + Add Another Extra Ticket
+            </button>
+        </div>
+
+        <br><br>
         <button type="submit">Submit All</button>
     </form>
 {% endblock %}
@@ -160,6 +181,31 @@
                 prevHolder();
             }
         });
+
+        // Extra tickets functionality
+        let extraTicketCount = 1;
+        
+        function addExtraTicketRow() {
+            extraTicketCount++;
+            const container = document.getElementById('extra-tickets-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'extra-ticket-row';
+            newRow.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+            
+            newRow.innerHTML = `
+                <label style="min-width: 80px;">Price ($):</label>
+                <input type="number" name="extra_price_${extraTicketCount}" placeholder="Price" min="1" style="width: 100px; padding: 5px;">
+                <label style="min-width: 100px;">Stock Number:</label>
+                <input type="number" name="extra_stock_${extraTicketCount}" placeholder="Stock #" min="0" style="width: 120px; padding: 5px;">
+                <button type="button" onclick="removeExtraTicketRow(this)" style="padding: 5px 8px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">×</button>
+            `;
+            
+            container.appendChild(newRow);
+        }
+        
+        function removeExtraTicketRow(button) {
+            button.parentElement.remove();
+        }
 
         updateView();
     </script>

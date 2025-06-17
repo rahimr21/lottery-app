@@ -170,6 +170,61 @@
         background-color: #0056b3;
     }
     
+    /* Daily totals section styles */
+    .daily-totals-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .compact-table {
+        width: auto;
+        margin: 10px 0;
+        border-collapse: collapse;
+    }
+    
+    .compact-table th,
+    .compact-table td {
+        padding: 6px 10px;
+        font-size: 14px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+    }
+    
+    .compact-table th {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    .closing-values-section {
+        background-color: #fff3cd;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .override-section {
+        background-color: #f8d7da;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 15px;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .override-checkbox {
+        margin-bottom: 10px;
+    }
+    
+    .override-fields {
+        display: none;
+    }
+    
+    .override-fields.active {
+        display: block;
+    }
+    
     @media print {
         .form-container,
         .print-btn,
@@ -207,11 +262,80 @@
     </div>
     {% endif %}
     
-    <form method="POST">
+    <form method="POST" id="reportForm">
         <div class="form-row">
             <div class="form-group">
                 <label for="date">Report Date:</label>
-                <input type="date" id="date" name="date" value="{{ current_date }}" required>
+                <input type="date" id="date" name="date" value="{{ selected_date or current_date }}" required onchange="updateDateInfo()">
+            </div>
+        </div>
+        
+        <!-- Daily Totals Section -->
+        {% if totals or extra_totals %}
+        <div class="daily-totals-section">
+            <h3>📊 Daily Totals for {{ selected_date or current_date }}</h3>
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Ticket Value</th>
+                        <th>Total Tickets</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for total in totals %}
+                        <tr>
+                            <td>${{ total.ticket_value }} (Holders)</td>
+                            <td>{{ total.total_tickets }}</td>
+                            <td>${{ total.total_value }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% for extra_total in extra_totals %}
+                        <tr style="background-color: #e8f4fd;">
+                            <td>${{ extra_total.ticket_value }} (Extra)</td>
+                            <td>{{ extra_total.total_tickets }}</td>
+                            <td>${{ extra_total.total_value }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <!-- Closing Values Section -->
+        <div class="closing-values-section">
+            <h3>💰 Closing Values for Calculations</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Today Closing ({{ selected_date or current_date }}):</label>
+                    <div style="font-weight: bold; font-size: 16px; color: #28a745;">${{ "%.2f"|format(today_closing_value) }}</div>
+                </div>
+                <div class="form-group">
+                    <label>Yesterday Closing:</label>
+                    <div style="font-weight: bold; font-size: 16px; color: #28a745;">${{ "%.2f"|format(yesterday_closing_value) }}</div>
+                </div>
+            </div>
+            
+            <!-- Override Section -->
+            <div class="override-section">
+                <div class="override-checkbox">
+                    <input type="checkbox" id="enableOverride" onchange="toggleOverride()">
+                    <label for="enableOverride" style="margin-left: 5px; font-weight: bold; color: #721c24;">
+                        ⚠️ Override Closing Values (Use with caution)
+                    </label>
+                </div>
+                <div class="override-fields" id="overrideFields">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="override_today_closing">Override Today Closing ($):</label>
+                            <input type="number" id="override_today_closing" name="override_today_closing" step="0.01" placeholder="Leave empty to use calculated value">
+                        </div>
+                        <div class="form-group">
+                            <label for="override_yesterday_closing">Override Yesterday Closing ($):</label>
+                            <input type="number" id="override_yesterday_closing" name="override_yesterday_closing" step="0.01" placeholder="Leave empty to use calculated value">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -397,4 +521,32 @@
     <button onclick="window.location.href='{{ url_for('create_report') }}'" class="print-btn" style="background-color: #6c757d;">📝 Create New Report</button>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleOverride() {
+    const checkbox = document.getElementById('enableOverride');
+    const fields = document.getElementById('overrideFields');
+    
+    if (checkbox.checked) {
+        fields.classList.add('active');
+    } else {
+        fields.classList.remove('active');
+        // Clear override values when unchecked
+        document.getElementById('override_today_closing').value = '';
+        document.getElementById('override_yesterday_closing').value = '';
+    }
+}
+
+function updateDateInfo() {
+    const dateInput = document.getElementById('date');
+    const selectedDate = dateInput.value;
+    
+    if (selectedDate) {
+        // Redirect to reload the page with the new date to show daily totals
+        window.location.href = `{{ url_for('create_report') }}?date=${selectedDate}`;
+    }
+}
+</script>
 {% endblock %} 

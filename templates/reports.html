@@ -177,9 +177,16 @@
             <tbody>
                 {% for total in totals %}
                     <tr>
-                        <td>${{ total.ticket_value }}</td>
+                        <td>${{ total.ticket_value }} (Holders)</td>
                         <td>{{ total.total_tickets }}</td>
                         <td>${{ total.total_value }}</td>
+                    </tr>
+                {% endfor %}
+                {% for extra_total in extra_totals %}
+                    <tr style="background-color: #e8f4fd;">
+                        <td>${{ extra_total.ticket_value }} (Extra)</td>
+                        <td>{{ extra_total.total_tickets }}</td>
+                        <td>${{ extra_total.total_value }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -226,6 +233,28 @@
             {% endfor %}
         </tbody>
     </table>
+
+    {% if extra_tickets %}
+    <h2>Extra Tickets (Not in Holders)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Ticket Price</th>
+                <th>Stock Number</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in extra_tickets %}
+                <tr style="background-color: #e8f4fd;">
+                    <td>${{ ticket.ticket_price }}</td>
+                    <td>{{ ticket.stock_number }}</td>
+                    <td>${{ ticket.ticket_price * ticket.stock_number }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
 {% endblock %}
 
 {% block scripts %}
